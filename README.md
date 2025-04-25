@@ -83,3 +83,71 @@ WHERE ten = 'Ninh';
 ![Screenshot (56)](https://github.com/user-attachments/assets/61ad66ba-b37e-4185-838a-64308e3996a4)
 
 ## 7. Nhập sql để tìm xem có những sv nào trùng họ và tên đệm với em?
+  - Sử dụng câu lệnh:
+```sql
+SELECT* 
+FROM SV
+WHERE hodem = 'Hầu Nhật';
+```
+![Screenshot (57)](https://github.com/user-attachments/assets/0b4d22c2-5b39-478c-a06f-4b6cdcedd473)
+
+## 8. Nhập sql để tìm xem có những sv nào có sđt sai khác chỉ 1 số so với sđt của em?
+  - Sử dụng câu lệnh:
+```sql
+SELECT masv, hodem, ten, sdt,
+       (CASE WHEN SUBSTRING(sdt, 1, 1) = '9' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 2, 1) = '7' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 3, 1) = '4' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 4, 1) = '4' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 5, 1) = '9' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 6, 1) = '3' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 7, 1) = '0' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 8, 1) = '0' THEN 0 ELSE 1 END +
+        CASE WHEN SUBSTRING(sdt, 9, 1) = '2' THEN 0 ELSE 1 END)
+       AS so_ky_tu_sai
+FROM SV
+WHERE LEN(sdt) = 9
+ORDER BY so_ky_tu_sai;
+```
+![Screenshot (58)](https://github.com/user-attachments/assets/073a0421-d68a-46ff-bb01-df6fde57703b)
+
+## 9. BẢNG SV CÓ HƠN 9000 ROWS, HÃY LIỆT KÊ TẤT CẢ CÁC SV NGÀNH KMT, SẮP XẾP THEO TÊN VÀ HỌ ĐỆM, KIỂU TIẾNG  VIỆT, GIẢI THÍCH?
+  - Sử dụng câu lệnh:
+```sql
+SELECT*,
+    -- Thêm cột ngành mới 
+    SUBSTRING([lop], 4, 3) AS nganh -- Trích 3 ký tự từ vị trí thứ 4 của cột lop (ví dụ: "K57KMT.01" → "KMT"), đặt tên cột là nganh.
+FROM [DanhSachSV_TNUT].[dbo].[SV]
+WHERE [lop] LIKE N'%KMT%' -- Chỉ lấy những dòng mà cột lop có chứa chữ "KMT" (lọc ngành KMT)
+ORDER BY -- Sắp xếp kết quả theo
+    [ten] COLLATE Vietnamese_CI_AS, -- Sắp xếp theo tên sinh viên, dùng bộ mã chuẩn tiếng Việt để phân biệt đúng a, ă, â,...
+    [hodem] COLLATE Vietnamese_CI_AS; -- Nếu trùng tên, thì sắp xếp tiếp theo họ đệm, cũng theo tiếng Việt.
+```
+![Screenshot (59)](https://github.com/user-attachments/assets/bad754a1-1227-4f81-afbf-9bec6e06dcbd)
+
+## 10. HÃY NHẬP SQL ĐỂ LIỆT KÊ CÁC SV NỮ NGÀNH KMT CÓ TRONG BẢNG SV (TRÌNH BÀY QUÁ TRÌNH SUY NGHĨ VÀ GIẢI NHỮNG VƯỚNG MẮC)? 
+  - Sử dụng câu lệnh:
+```sql
+SELECT *,
+    SUBSTRING([lop], 4, 3) AS MaNganh
+FROM SV
+WHERE lop LIKE '%KMT%'
+  AND hodem LIKE N'%Thị%'
+  AND (
+    ten LIKE N'Anh' OR ten LIKE N'Trang' OR ten LIKE N'Lan' OR
+    ten LIKE N'Hoa' OR ten LIKE N'Hương' OR ten LIKE N'Linh' OR
+    ten LIKE N'Hạnh' OR ten LIKE N'Thảo' OR ten LIKE N'Hằng' OR
+    ten LIKE N'Vân' OR ten LIKE N'My' OR ten LIKE N'Mai' OR
+    ten LIKE N'Ngọc' OR ten LIKE N'Yến' OR ten LIKE N'Diệu'
+  );
+```
+   - Ở bài toán này, ta sẽ thêm một điều kiện vào mệnh đề WHERE:
+     - ```lop LIKE '%KMT%'```: chỉ sinh viên ngành KMT
+     - ```hodem LIKE N'%Thị%'```: chỉ sinh viên có họ đệm chứa "Thị"
+     - ```ten LIKE ...```: lọc các tên nữ phổ biến
+![Screenshot (60)](https://github.com/user-attachments/assets/4bc88392-0767-4bfd-8f0d-82f5e1f158c4)
+   
+### => Cách này tuy vẫn có thể truy vấn ra được các sinh viên nữ ngành KMT nhưng chưa tối ưu vì trong bảng không có dữ liệu nào cụ thể để có thể phân biệt rõ các sinh viên nào là nam, sinh viên nào là nữ. 
+#### Giải pháp: 
+   - Đoán giới tính thông qua họ đệm và tên (*không tối ưu - đã kiểm chứng ở trên*).
+   - Thêm cột ```gioitinh``` rồi cập nhật lại dữ liệu.
